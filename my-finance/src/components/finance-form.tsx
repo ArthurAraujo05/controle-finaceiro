@@ -137,7 +137,7 @@ export function FinanceForm({ onSubmit, editingTransaction, onCancel }: FinanceF
                             Cancelar
                         </Button>
                     )}
-                    <Button type="submit" className="ml-auto">
+                    <Button type="submit" className="ml-auto mt-4">
                         {editingTransaction ? "Atualizar" : "Adicionar"}
                     </Button>
                 </CardFooter>

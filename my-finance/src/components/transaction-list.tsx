@@ -21,7 +21,20 @@ export function TransactionList({ transactions, onDelete, onEdit }: TransactionL
     const [filterType, setFilterType] = useState("")
     const [sortBy, setSortBy] = useState("date")
     const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc")
-
+    const getCategoryLabel = (category: string) => {
+        const categories: Record<string, string> = {
+            alimentacao: "Alimentação",
+            transporte: "Transporte",
+            moradia: "Moradia",
+            lazer: "Lazer",
+            saude: "Saúde",
+            educacao: "Educação",
+            salario: "Salário",
+            investimentos: "Investimentos",
+            outros: "Outros",
+        }
+        return categories[category] || category
+    }
     const filteredTransactions = transactions.filter((transaction) => {
         const matchesSearch =
             transaction.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -60,20 +73,7 @@ export function TransactionList({ transactions, onDelete, onEdit }: TransactionL
         return new Intl.DateTimeFormat("pt-BR").format(date)
     }
 
-    const getCategoryLabel = (category: string) => {
-        const categories: Record<string, string> = {
-            alimentacao: "Alimentação",
-            transporte: "Transporte",
-            moradia: "Moradia",
-            lazer: "Lazer",
-            saude: "Saúde",
-            educacao: "Educação",
-            salario: "Salário",
-            investimentos: "Investimentos",
-            outros: "Outros",
-        }
-        return categories[category] || category
-    }
+
 
     const handleSort = (column: string) => {
         if (sortBy === column) {
