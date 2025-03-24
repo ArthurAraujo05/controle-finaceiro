@@ -8,6 +8,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Edit, Trash2, Download } from "lucide-react"
 import type { Transaction } from "@/types/transaction"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogClose,
+  } from "@/components/ui/dialog"
+  import { Label } from "@/components/ui/label"
 
 interface TransactionListProps {
     transactions: Transaction[]

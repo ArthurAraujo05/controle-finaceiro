@@ -45,7 +45,6 @@ export function FinanceDashboard({ transactions }: FinanceDashboardProps) {
     }).format(value)
   }
 
-  // Prepare data for expense categories pie chart
   const expensesByCategory = useMemo(() => {
     const categoryMap = new Map<string, number>()
 
@@ -63,7 +62,6 @@ export function FinanceDashboard({ transactions }: FinanceDashboardProps) {
     }))
   }, [transactions])
 
-  // Prepare data for monthly chart
   const monthlyData = useMemo(() => {
     const monthMap = new Map<string, { income: number; expense: number }>()
 
