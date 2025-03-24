@@ -39,7 +39,8 @@ export function TransactionList({ transactions, onDelete, onEdit }: TransactionL
         const matchesSearch =
             transaction.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
             getCategoryLabel(transaction.category).toLowerCase().includes(searchTerm.toLowerCase())
-        const matchesCategory = filterCategory === "" || transaction.category === filterCategory
+        const matchesCategory = filterCategory === "all" || filterCategory === "" || transaction.category === filterCategory
+
         const matchesType = filterType === "" || transaction.type === filterType
 
         return matchesSearch && matchesCategory && matchesType
