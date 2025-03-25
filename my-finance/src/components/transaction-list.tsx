@@ -16,8 +16,8 @@ import {
     DialogHeader,
     DialogTitle,
     DialogClose,
-  } from "@/components/ui/dialog"
-  import { Label } from "@/components/ui/label"
+} from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
 
 interface TransactionListProps {
     transactions: Transaction[]
@@ -31,6 +31,15 @@ export function TransactionList({ transactions, onDelete, onEdit }: TransactionL
     const [filterType, setFilterType] = useState("")
     const [sortBy, setSortBy] = useState("date")
     const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc")
+    const [dialogOpen, setDialogOpen] = useState(false)
+    const [editingItem, setEditingItem] = useState<Transaction | null>(null)
+    const [editForm, setEditForm] = useState({
+        description: "",
+        category: "",
+        amount: "",
+        date: "",
+    })
+
     const getCategoryLabel = (category: string) => {
         const categories: Record<string, string> = {
             alimentacao: "Alimentação",
@@ -45,13 +54,17 @@ export function TransactionList({ transactions, onDelete, onEdit }: TransactionL
         }
         return categories[category] || category
     }
+
     const filteredTransactions = transactions.filter((transaction) => {
         const matchesSearch =
             transaction.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            getCategoryLabel(transaction.category).toLowerCase().includes(searchTerm.toLowerCase())
-        const matchesCategory = filterCategory === "all" || filterCategory === "" || transaction.category === filterCategory
+            transaction.category.toLowerCase().includes(searchTerm.toLowerCase())
 
-        const matchesType = filterType === "" || transaction.type === filterType
+        const matchesCategory =
+            filterCategory === "all" || filterCategory === "" || transaction.category === filterCategory
+
+        const matchesType =
+            filterType === "all" || filterType === "" || transaction.type === filterType
 
         return matchesSearch && matchesCategory && matchesType
     })
@@ -83,8 +96,6 @@ export function TransactionList({ transactions, onDelete, onEdit }: TransactionL
         const date = new Date(dateString)
         return new Intl.DateTimeFormat("pt-BR").format(date)
     }
-
-
 
     const handleSort = (column: string) => {
         if (sortBy === column) {
@@ -122,6 +133,51 @@ export function TransactionList({ transactions, onDelete, onEdit }: TransactionL
         document.body.removeChild(link)
     }
 
+    const handleOpenEditDialog = (transaction: Transaction) => {
+        setEditingItem(transaction)
+        setEditForm({
+            description: transaction.description,
+            category: transaction.category,
+            amount: transaction.amount.toString(),
+            date: transaction.date,
+        })
+        setDialogOpen(true)
+    }
+
+    const handleSaveEdit = () => {
+        if (!editingItem) return
+
+        if (!editForm.description.trim() || !editForm.category || !editForm.amount || !editForm.date) {
+            alert("Por favor, preencha todos os campos obrigatórios.")
+            return
+        }
+
+        const amount = Number.parseFloat(editForm.amount)
+        if (isNaN(amount) || amount <= 0) {
+            alert("Por favor, insira um valor válido maior que zero.")
+            return
+        }
+
+        const updatedTransaction: Transaction = {
+            ...editingItem,
+            description: editForm.description.trim(),
+            category: editForm.category,
+            amount: amount,
+            date: editForm.date,
+        }
+
+        onEdit(updatedTransaction)
+        setDialogOpen(false)
+        setEditingItem(null)
+    }
+
+    const handleEditFormChange = (field: string, value: string) => {
+        setEditForm((prev) => ({
+            ...prev,
+            [field]: value,
+        }))
+    }
+
     return (
         <Card>
             <CardHeader className="space-y-4">
@@ -140,71 +196,64 @@ export function TransactionList({ transactions, onDelete, onEdit }: TransactionL
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                    <div>
-                        <Input
-                            placeholder="Buscar transações..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
-                    </div>
+                    <Input
+                        placeholder="Buscar transações..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
 
-                    <div>
-                        <Select value={filterCategory} onValueChange={setFilterCategory}>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Todas as categorias" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">Todas as categorias</SelectItem>
-                                <SelectItem value="alimentacao">Alimentação</SelectItem>
-                                <SelectItem value="transporte">Transporte</SelectItem>
-                                <SelectItem value="moradia">Moradia</SelectItem>
-                                <SelectItem value="lazer">Lazer</SelectItem>
-                                <SelectItem value="saude">Saúde</SelectItem>
-                                <SelectItem value="educacao">Educação</SelectItem>
-                                <SelectItem value="salario">Salário</SelectItem>
-                                <SelectItem value="investimentos">Investimentos</SelectItem>
-                                <SelectItem value="outros">Outros</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
+                    <Select value={filterCategory} onValueChange={setFilterCategory}>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Todas as categorias" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">Todas as categorias</SelectItem>
+                            <SelectItem value="alimentacao">Alimentação</SelectItem>
+                            <SelectItem value="transporte">Transporte</SelectItem>
+                            <SelectItem value="moradia">Moradia</SelectItem>
+                            <SelectItem value="lazer">Lazer</SelectItem>
+                            <SelectItem value="saude">Saúde</SelectItem>
+                            <SelectItem value="educacao">Educação</SelectItem>
+                            <SelectItem value="salario">Salário</SelectItem>
+                            <SelectItem value="investimentos">Investimentos</SelectItem>
+                            <SelectItem value="outros">Outros</SelectItem>
+                        </SelectContent>
+                    </Select>
 
-                    <div>
-                        <Select value={filterType} onValueChange={setFilterType}>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Todos os tipos" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">Todos os tipos</SelectItem>
-                                <SelectItem value="income">Receitas</SelectItem>
-                                <SelectItem value="expense">Despesas</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
+                    <Select value={filterType} onValueChange={setFilterType}>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Todos os tipos" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">Todos os tipos</SelectItem>
+                            <SelectItem value="income">Receitas</SelectItem>
+                            <SelectItem value="expense">Despesas</SelectItem>
+                        </SelectContent>
+                    </Select>
 
-                    <div>
-                        <Select
-                            value={`${sortBy}-${sortDirection}`}
-                            onValueChange={(value) => {
-                                const [newSortBy, newSortDirection] = value.split("-") as [string, "asc" | "desc"]
-                                setSortBy(newSortBy)
-                                setSortDirection(newSortDirection)
-                            }}
-                        >
-                            <SelectTrigger>
-                                <SelectValue placeholder="Ordenar por" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="date-desc">Data (mais recente)</SelectItem>
-                                <SelectItem value="date-asc">Data (mais antiga)</SelectItem>
-                                <SelectItem value="amount-desc">Valor (maior)</SelectItem>
-                                <SelectItem value="amount-asc">Valor (menor)</SelectItem>
-                                <SelectItem value="description-asc">Descrição (A-Z)</SelectItem>
-                                <SelectItem value="description-desc">Descrição (Z-A)</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
+                    <Select
+                        value={`${sortBy}-${sortDirection}`}
+                        onValueChange={(value) => {
+                            const [newSortBy, newSortDirection] = value.split("-") as [string, "asc" | "desc"]
+                            setSortBy(newSortBy)
+                            setSortDirection(newSortDirection)
+                        }}
+                    >
+                        <SelectTrigger>
+                            <SelectValue placeholder="Ordenar por" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="date-desc">Data (mais recente)</SelectItem>
+                            <SelectItem value="date-asc">Data (mais antiga)</SelectItem>
+                            <SelectItem value="amount-desc">Valor (maior)</SelectItem>
+                            <SelectItem value="amount-asc">Valor (menor)</SelectItem>
+                            <SelectItem value="description-asc">Descrição (A-Z)</SelectItem>
+                            <SelectItem value="description-desc">Descrição (Z-A)</SelectItem>
+                        </SelectContent>
+                    </Select>
                 </div>
             </CardHeader>
+
             <CardContent>
                 {transactions.length === 0 ? (
                     <p className="text-center text-muted-foreground py-4">Nenhuma transação registrada ainda.</p>
@@ -250,7 +299,7 @@ export function TransactionList({ transactions, onDelete, onEdit }: TransactionL
                                         </TableCell>
                                         <TableCell className="text-right">
                                             <div className="flex justify-end space-x-2">
-                                                <Button variant="ghost" size="icon" onClick={() => onEdit(transaction)}>
+                                                <Button variant="ghost" size="icon" onClick={() => handleOpenEditDialog(transaction)}>
                                                     <Edit className="h-4 w-4" />
                                                 </Button>
                                                 <Button variant="ghost" size="icon" onClick={() => onDelete(transaction.id)}>
@@ -265,6 +314,84 @@ export function TransactionList({ transactions, onDelete, onEdit }: TransactionL
                     </div>
                 )}
             </CardContent>
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Editar Transação</DialogTitle>
+                        <DialogDescription>Faça as alterações necessárias nos campos abaixo.</DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="edit-description" className="text-right">
+                                Descrição
+                            </Label>
+                            <Input
+                                id="edit-description"
+                                value={editForm.description}
+                                onChange={(e) => handleEditFormChange("description", e.target.value)}
+                                className="col-span-3"
+                            />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="edit-category" className="text-right">
+                                Categoria
+                            </Label>
+                            <Select value={editForm.category} onValueChange={(value) => handleEditFormChange("category", value)}>
+                                <SelectTrigger className="col-span-3">
+                                    <SelectValue placeholder="Selecione uma categoria" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="alimentacao">Alimentação</SelectItem>
+                                    <SelectItem value="transporte">Transporte</SelectItem>
+                                    <SelectItem value="moradia">Moradia</SelectItem>
+                                    <SelectItem value="lazer">Lazer</SelectItem>
+                                    <SelectItem value="saude">Saúde</SelectItem>
+                                    <SelectItem value="educacao">Educação</SelectItem>
+                                    <SelectItem value="salario">Salário</SelectItem>
+                                    <SelectItem value="investimentos">Investimentos</SelectItem>
+                                    <SelectItem value="outros">Outros</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="edit-amount" className="text-right">
+                                Valor
+                            </Label>
+                            <Input
+                                id="edit-amount"
+                                type="number"
+                                step="0.01"
+                                min="0.01"
+                                value={editForm.amount}
+                                onChange={(e) => handleEditFormChange("amount", e.target.value)}
+                                className="col-span-3"
+                            />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="edit-date" className="text-right">
+                                Data
+                            </Label>
+                            <Input
+                                id="edit-date"
+                                type="date"
+                                value={editForm.date}
+                                onChange={(e) => handleEditFormChange("date", e.target.value)}
+                                className="col-span-3"
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <DialogClose asChild>
+                            <Button type="button" variant="secondary">
+                                Cancelar
+                            </Button>
+                        </DialogClose>
+                        <Button type="button" onClick={handleSaveEdit}>
+                            Salvar alterações
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </Card>
     )
 }

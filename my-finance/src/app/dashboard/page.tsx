@@ -59,8 +59,18 @@ export default function DashboardPage() {
     }
 
     const updateTransaction = (updatedTransaction: Transaction) => {
-        setTransactions(transactions.map((t) => (t.id === updatedTransaction.id ? updatedTransaction : t)))
+        // Atualizar a transação no array de transações
+        const updatedTransactions = transactions.map((t) => (t.id === updatedTransaction.id ? updatedTransaction : t))
+
+        // Atualizar o estado com as transações atualizadas
+        setTransactions(updatedTransactions)
+
+        // Limpar o estado de edição
         setEditingTransaction(null)
+
+        // Log para debug
+        console.log("Transação atualizada:", updatedTransaction)
+        console.log("Transações atualizadas:", updatedTransactions)
     }
 
     const deleteTransaction = (id: string) => {
