@@ -21,6 +21,7 @@ export default function DashboardPage() {
     const [isLoading, setIsLoading] = useState(true)
     const router = useRouter()
 
+    // Verificar se o usuário está logado
     useEffect(() => {
         const checkAuth = () => {
             const isLoggedIn = localStorage.getItem("isLoggedIn") === "true"
@@ -35,6 +36,7 @@ export default function DashboardPage() {
         setMounted(true)
     }, [router])
 
+    // Load saved transactions from localStorage
     useEffect(() => {
         if (mounted && !isLoading) {
             const savedTransactions = localStorage.getItem("transactions")
@@ -48,6 +50,7 @@ export default function DashboardPage() {
         }
     }, [mounted, isLoading])
 
+    // Save transactions to localStorage whenever they change
     useEffect(() => {
         if (mounted && !isLoading) {
             localStorage.setItem("transactions", JSON.stringify(transactions))
@@ -119,7 +122,7 @@ export default function DashboardPage() {
             </header>
 
             <main className="container mx-auto p-4 max-w-4xl">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div className="mb-8">
                     <FinanceStats transactions={transactions} />
                 </div>
 
