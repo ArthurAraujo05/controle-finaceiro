@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
@@ -12,7 +11,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AlertCircle, Loader2 } from "lucide-react"
 
-export function ResetPasswordForm() {
+function ResetPasswordForm() {
     const router = useRouter()
     const searchParams = useSearchParams()
     const email = searchParams.get("email") || ""
@@ -51,7 +50,6 @@ export function ResetPasswordForm() {
         setIsLoading(true)
 
         try {
-            // Verificar o código de verificação
             const resetRequests = JSON.parse(localStorage.getItem("resetRequests") || "{}")
             const resetRequest = resetRequests[email]
 
@@ -102,7 +100,9 @@ export function ResetPasswordForm() {
         <Card>
             <CardHeader>
                 <CardTitle>Redefinir Senha</CardTitle>
-                <CardDescription>Digite o código de verificação enviado para {email} e sua nova senha</CardDescription>
+                <CardDescription>
+                    Digite o código de verificação enviado para {email} e sua nova senha
+                </CardDescription>
             </CardHeader>
             <form onSubmit={handleSubmit}>
                 <CardContent className="space-y-4">
@@ -174,3 +174,4 @@ export function ResetPasswordForm() {
     )
 }
 
+export default ResetPasswordForm

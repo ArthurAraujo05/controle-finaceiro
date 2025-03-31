@@ -1,7 +1,8 @@
-import { ResetPasswordForm } from "@/components/reset-password-form"
 import Link from "next/link"
+import { Suspense } from "react"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
+import  ResetPasswordForm  from "@/components/reset-password-form" 
 
 export default function ResetPasswordPage() {
     return (
@@ -21,9 +22,10 @@ export default function ResetPasswordPage() {
                     <p className="text-muted-foreground mt-2">Insira o código de verificação e sua nova senha</p>
                 </div>
 
-                <ResetPasswordForm />
+                <Suspense fallback={<div>Carregando formulário...</div>}>
+                    <ResetPasswordForm />
+                </Suspense>
             </div>
         </div>
     )
 }
-
