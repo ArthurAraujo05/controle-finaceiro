@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button"
 import { MoonIcon, SunIcon } from "lucide-react"
 import { useTheme } from "next-themes"
 import { UserNav } from "@/components/user-nav"
+import { ControlSelector } from "@/components/control-selector"
 
 export default function DashboardPage() {
     const [transactions, setTransactions] = useState<Transaction[]>([])
@@ -19,6 +20,7 @@ export default function DashboardPage() {
     const { theme, setTheme } = useTheme()
     const [mounted, setMounted] = useState(false)
     const [isLoading, setIsLoading] = useState(true)
+    const [selectedControlId, setSelectedControlId] = useState("")
     const router = useRouter()
 
     // Verificar se o usuário está logado
@@ -36,26 +38,44 @@ export default function DashboardPage() {
         setMounted(true)
     }, [router])
 
-    // Load saved transactions from localStorage
+    // Carregar transações do localStorage com base no controle selecionado
     useEffect(() => {
-        if (mounted && !isLoading) {
-            const savedTransactions = localStorage.getItem("transactions")
-            if (savedTransactions) {
-                try {
-                    setTransactions(JSON.parse(savedTransactions))
-                } catch (e) {
-                    console.error("Error loading saved transactions", e)
-                }
+        if (mounted && !isLoading && selectedControlId) {
+            try {
+                // Carregar todas as transações organizadas por controle
+                const allTransactions = JSON.parse(localStorage.getItem("allTransactions") || "{}")
+
+                // Obter as transações do controle selecionado
+                const controlTransactions = allTransactions[selectedControlId] || []
+                setTransactions(controlTransactions)
+            } catch (e) {
+                console.error("Erro ao carregar transações", e)
+                setTransactions([])
             }
         }
-    }, [mounted, isLoading])
+    }, [mounted, isLoading, selectedControlId])
 
-    // Save transactions to localStorage whenever they change
+    // Salvar transações no localStorage sempre que elas mudarem
     useEffect(() => {
-        if (mounted && !isLoading) {
-            localStorage.setItem("transactions", JSON.stringify(transactions))
+        if (mounted && !isLoading && selectedControlId) {
+            try {
+                // Carregar todas as transações
+                const allTransactions = JSON.parse(localStorage.getItem("allTransactions") || "{}")
+
+                // Atualizar as transações do controle selecionado
+                allTransactions[selectedControlId] = transactions
+
+                // Salvar de volta no localStorage
+                localStorage.setItem("allTransactions", JSON.stringify(allTransactions))
+            } catch (e) {
+                console.error("Erro ao salvar transações", e)
+            }
         }
-    }, [transactions, mounted, isLoading])
+    }, [transactions, mounted, isLoading, selectedControlId])
+
+    const handleSelectControl = (controlId: string) => {
+        setSelectedControlId(controlId)
+    }
 
     const addTransaction = (transaction: Transaction) => {
         setTransactions([...transactions, { ...transaction, id: Date.now().toString() }])
@@ -70,10 +90,6 @@ export default function DashboardPage() {
 
         // Limpar o estado de edição
         setEditingTransaction(null)
-
-        // Log para debug
-        console.log("Transação atualizada:", updatedTransaction)
-        console.log("Transações atualizadas:", updatedTransactions)
     }
 
     const deleteTransaction = (id: string) => {
@@ -109,8 +125,11 @@ export default function DashboardPage() {
     return (
         <div className="min-h-screen bg-background">
             <header className="border-b">
-                <div className="container mx-auto px-4 py-3 flex justify-between items-center">
-                    <h1 className="text-xl font-bold">Controle Financeiro</h1>
+                <div className="container mx-auto px-4 py-3 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full sm:w-auto">
+                        <h1 className="text-xl font-bold">Controle Financeiro</h1>
+                        <ControlSelector selectedControlId={selectedControlId} onSelectControl={handleSelectControl} />
+                    </div>
                     <div className="flex items-center gap-4">
                         <Button variant="outline" size="icon" onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
                             {mounted && theme === "dark" ? <SunIcon className="h-5 w-5" /> : <MoonIcon className="h-5 w-5" />}

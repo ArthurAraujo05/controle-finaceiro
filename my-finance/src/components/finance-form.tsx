@@ -9,6 +9,8 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { AlertCircle } from "lucide-react"
 import type { Transaction, TransactionType } from "@/types/transaction"
 
 interface FinanceFormProps {
@@ -23,6 +25,16 @@ export function FinanceForm({ onSubmit, editingTransaction, onCancel }: FinanceF
     const [category, setCategory] = useState("")
     const [type, setType] = useState<TransactionType>("expense")
     const [date, setDate] = useState(new Date().toISOString().split("T")[0])
+    const [error, setError] = useState("")
+
+    // Calcular a data máxima permitida (amanhã)
+    const getMaxDate = () => {
+        const tomorrow = new Date()
+        tomorrow.setDate(tomorrow.getDate() + 1)
+        return tomorrow.toISOString().split("T")[0]
+    }
+
+    const maxDate = getMaxDate()
 
     useEffect(() => {
         if (editingTransaction) {
@@ -34,12 +46,50 @@ export function FinanceForm({ onSubmit, editingTransaction, onCancel }: FinanceF
         }
     }, [editingTransaction])
 
+    const validateDate = (dateString: string) => {
+        const selectedDate = new Date(dateString)
+        const maxAllowedDate = new Date(maxDate)
+
+        if (selectedDate > maxAllowedDate) {
+            return false
+        }
+        return true
+    }
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault()
+        setError("")
+
+        // Validação básica
+        if (!description.trim()) {
+            setError("Por favor, informe uma descrição")
+            return
+        }
+
+        if (!amount || Number.parseFloat(amount) <= 0) {
+            setError("Por favor, informe um valor válido maior que zero")
+            return
+        }
+
+        if (!category) {
+            setError("Por favor, selecione uma categoria")
+            return
+        }
+
+        if (!date) {
+            setError("Por favor, selecione uma data")
+            return
+        }
+
+        // Validação da data
+        if (!validateDate(date)) {
+            setError("A data não pode ser mais de um dia no futuro")
+            return
+        }
 
         const transaction: Transaction = {
             id: editingTransaction?.id || "",
-            description,
+            description: description.trim(),
             amount: Number.parseFloat(amount),
             category,
             type,
@@ -56,6 +106,7 @@ export function FinanceForm({ onSubmit, editingTransaction, onCancel }: FinanceF
         setCategory("")
         setType("expense")
         setDate(new Date().toISOString().split("T")[0])
+        setError("")
     }
 
     return (
@@ -65,6 +116,13 @@ export function FinanceForm({ onSubmit, editingTransaction, onCancel }: FinanceF
             </CardHeader>
             <form onSubmit={handleSubmit}>
                 <CardContent className="space-y-4">
+                    {error && (
+                        <Alert variant="destructive">
+                            <AlertCircle className="h-4 w-4" />
+                            <AlertDescription>{error}</AlertDescription>
+                        </Alert>
+                    )}
+
                     <div className="space-y-2">
                         <Label htmlFor="type">Tipo</Label>
                         <RadioGroup
@@ -128,7 +186,15 @@ export function FinanceForm({ onSubmit, editingTransaction, onCancel }: FinanceF
 
                     <div className="space-y-2">
                         <Label htmlFor="date">Data</Label>
-                        <Input id="date" type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
+                        <Input
+                            id="date"
+                            type="date"
+                            value={date}
+                            onChange={(e) => setDate(e.target.value)}
+                            max={maxDate}
+                            required
+                        />
+                        <p className="text-xs text-muted-foreground">Você pode selecionar datas passadas, hoje ou amanhã.</p>
                     </div>
                 </CardContent>
                 <CardFooter className="flex justify-between">
@@ -146,3 +212,4 @@ export function FinanceForm({ onSubmit, editingTransaction, onCancel }: FinanceF
     )
 }
 
+// Compare this snippet from my-finance/src/components/finance-form.tsx:

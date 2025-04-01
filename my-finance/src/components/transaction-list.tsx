@@ -18,6 +18,8 @@ import {
     DialogClose,
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { AlertCircle } from "lucide-react"
 
 interface TransactionListProps {
     transactions: Transaction[]
@@ -31,15 +33,6 @@ export function TransactionList({ transactions, onDelete, onEdit }: TransactionL
     const [filterType, setFilterType] = useState("")
     const [sortBy, setSortBy] = useState("date")
     const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc")
-    const [dialogOpen, setDialogOpen] = useState(false)
-    const [editingItem, setEditingItem] = useState<Transaction | null>(null)
-    const [editForm, setEditForm] = useState({
-        description: "",
-        category: "",
-        amount: "",
-        date: "",
-    })
-
     const getCategoryLabel = (category: string) => {
         const categories: Record<string, string> = {
             alimentacao: "Alimentação",
@@ -55,16 +48,41 @@ export function TransactionList({ transactions, onDelete, onEdit }: TransactionL
         return categories[category] || category
     }
 
+    const [dialogOpen, setDialogOpen] = useState(false)
+    const [editingItem, setEditingItem] = useState<Transaction | null>(null)
+    const [editForm, setEditForm] = useState({
+        description: "",
+        category: "",
+        amount: "",
+        date: "",
+    })
+    const [editError, setEditError] = useState("")
+
+    // Calcular a data máxima permitida (amanhã)
+    const getMaxDate = () => {
+        const tomorrow = new Date()
+        tomorrow.setDate(tomorrow.getDate() + 1)
+        return tomorrow.toISOString().split("T")[0]
+    }
+
+    const maxDate = getMaxDate()
+
+    const validateDate = (dateString: string) => {
+        const selectedDate = new Date(dateString)
+        const maxAllowedDate = new Date(maxDate)
+
+        if (selectedDate > maxAllowedDate) {
+            return false
+        }
+        return true
+    }
+
     const filteredTransactions = transactions.filter((transaction) => {
         const matchesSearch =
             transaction.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            transaction.category.toLowerCase().includes(searchTerm.toLowerCase())
-
-        const matchesCategory =
-            filterCategory === "all" || filterCategory === "" || transaction.category === filterCategory
-
-        const matchesType =
-            filterType === "all" || filterType === "" || transaction.type === filterType
+            getCategoryLabel(transaction.category).toLowerCase().includes(searchTerm.toLowerCase())
+        const matchesCategory = filterCategory === "all" || transaction.category === filterCategory
+        const matchesType = filterType === "" || transaction.type === filterType
 
         return matchesSearch && matchesCategory && matchesType
     })
@@ -141,20 +159,43 @@ export function TransactionList({ transactions, onDelete, onEdit }: TransactionL
             amount: transaction.amount.toString(),
             date: transaction.date,
         })
+        setEditError("")
         setDialogOpen(true)
     }
 
     const handleSaveEdit = () => {
         if (!editingItem) return
 
-        if (!editForm.description.trim() || !editForm.category || !editForm.amount || !editForm.date) {
-            alert("Por favor, preencha todos os campos obrigatórios.")
+        // Limpar erro anterior
+        setEditError("")
+
+        // Validar campos obrigatórios
+        if (!editForm.description.trim()) {
+            setEditError("Por favor, informe uma descrição")
             return
         }
 
+        if (!editForm.category) {
+            setEditError("Por favor, selecione uma categoria")
+            return
+        }
+
+        // Garantir que o valor é um número válido
         const amount = Number.parseFloat(editForm.amount)
         if (isNaN(amount) || amount <= 0) {
-            alert("Por favor, insira um valor válido maior que zero.")
+            setEditError("Por favor, insira um valor válido maior que zero")
+            return
+        }
+
+        // Validar a data
+        if (!editForm.date) {
+            setEditError("Por favor, selecione uma data")
+            return
+        }
+
+        // Validar que a data não é mais de um dia no futuro
+        if (!validateDate(editForm.date)) {
+            setEditError("A data não pode ser mais de um dia no futuro")
             return
         }
 
@@ -166,8 +207,13 @@ export function TransactionList({ transactions, onDelete, onEdit }: TransactionL
             date: editForm.date,
         }
 
+        // Chamar a função onEdit do componente pai
         onEdit(updatedTransaction)
+
+        // Fechar o diálogo
         setDialogOpen(false)
+
+        // Limpar o estado de edição
         setEditingItem(null)
     }
 
@@ -196,64 +242,71 @@ export function TransactionList({ transactions, onDelete, onEdit }: TransactionL
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                    <Input
-                        placeholder="Buscar transações..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
+                    <div>
+                        <Input
+                            placeholder="Buscar transações..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
 
-                    <Select value={filterCategory} onValueChange={setFilterCategory}>
-                        <SelectTrigger>
-                            <SelectValue placeholder="Todas as categorias" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">Todas as categorias</SelectItem>
-                            <SelectItem value="alimentacao">Alimentação</SelectItem>
-                            <SelectItem value="transporte">Transporte</SelectItem>
-                            <SelectItem value="moradia">Moradia</SelectItem>
-                            <SelectItem value="lazer">Lazer</SelectItem>
-                            <SelectItem value="saude">Saúde</SelectItem>
-                            <SelectItem value="educacao">Educação</SelectItem>
-                            <SelectItem value="salario">Salário</SelectItem>
-                            <SelectItem value="investimentos">Investimentos</SelectItem>
-                            <SelectItem value="outros">Outros</SelectItem>
-                        </SelectContent>
-                    </Select>
+                    <div>
+                        <Select value={filterCategory} onValueChange={setFilterCategory}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Todas as categorias" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">Todas as categorias</SelectItem>
+                                <SelectItem value="alimentacao">Alimentação</SelectItem>
+                                <SelectItem value="transporte">Transporte</SelectItem>
+                                <SelectItem value="moradia">Moradia</SelectItem>
+                                <SelectItem value="lazer">Lazer</SelectItem>
+                                <SelectItem value="saude">Saúde</SelectItem>
+                                <SelectItem value="educacao">Educação</SelectItem>
+                                <SelectItem value="salario">Salário</SelectItem>
+                                <SelectItem value="investimentos">Investimentos</SelectItem>
+                                <SelectItem value="outros">Outros</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
 
-                    <Select value={filterType} onValueChange={setFilterType}>
-                        <SelectTrigger>
-                            <SelectValue placeholder="Todos os tipos" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">Todos os tipos</SelectItem>
-                            <SelectItem value="income">Receitas</SelectItem>
-                            <SelectItem value="expense">Despesas</SelectItem>
-                        </SelectContent>
-                    </Select>
+                    <div>
+                        <Select value={filterType} onValueChange={setFilterType}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Todos os tipos" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">Todos os tipos</SelectItem>
+                                <SelectItem value="income">Receitas</SelectItem>
+                                <SelectItem value="expense">Despesas</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
 
-                    <Select
-                        value={`${sortBy}-${sortDirection}`}
-                        onValueChange={(value) => {
-                            const [newSortBy, newSortDirection] = value.split("-") as [string, "asc" | "desc"]
-                            setSortBy(newSortBy)
-                            setSortDirection(newSortDirection)
-                        }}
-                    >
-                        <SelectTrigger>
-                            <SelectValue placeholder="Ordenar por" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="date-desc">Data (mais recente)</SelectItem>
-                            <SelectItem value="date-asc">Data (mais antiga)</SelectItem>
-                            <SelectItem value="amount-desc">Valor (maior)</SelectItem>
-                            <SelectItem value="amount-asc">Valor (menor)</SelectItem>
-                            <SelectItem value="description-asc">Descrição (A-Z)</SelectItem>
-                            <SelectItem value="description-desc">Descrição (Z-A)</SelectItem>
-                        </SelectContent>
-                    </Select>
+                    <div>
+                        <Select
+                            value={`${sortBy}-${sortDirection}`}
+                            onValueChange={(value) => {
+                                const [newSortBy, newSortDirection] = value.split("-") as [string, "asc" | "desc"]
+                                setSortBy(newSortBy)
+                                setSortDirection(newSortDirection)
+                            }}
+                        >
+                            <SelectTrigger>
+                                <SelectValue placeholder="Ordenar por" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="date-desc">Data (mais recente)</SelectItem>
+                                <SelectItem value="date-asc">Data (mais antiga)</SelectItem>
+                                <SelectItem value="amount-desc">Valor (maior)</SelectItem>
+                                <SelectItem value="amount-asc">Valor (menor)</SelectItem>
+                                <SelectItem value="description-asc">Descrição (A-Z)</SelectItem>
+                                <SelectItem value="description-desc">Descrição (Z-A)</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
                 </div>
             </CardHeader>
-
             <CardContent>
                 {transactions.length === 0 ? (
                     <p className="text-center text-muted-foreground py-4">Nenhuma transação registrada ainda.</p>
@@ -314,12 +367,21 @@ export function TransactionList({ transactions, onDelete, onEdit }: TransactionL
                     </div>
                 )}
             </CardContent>
+            {/* Dialog de Edição */}
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                 <DialogContent className="sm:max-w-md">
                     <DialogHeader>
                         <DialogTitle>Editar Transação</DialogTitle>
                         <DialogDescription>Faça as alterações necessárias nos campos abaixo.</DialogDescription>
                     </DialogHeader>
+
+                    {editError && (
+                        <Alert variant="destructive" className="mt-2">
+                            <AlertCircle className="h-4 w-4" />
+                            <AlertDescription>{editError}</AlertDescription>
+                        </Alert>
+                    )}
+
                     <div className="grid gap-4 py-4">
                         <div className="grid grid-cols-4 items-center gap-4">
                             <Label htmlFor="edit-description" className="text-right">
@@ -371,13 +433,16 @@ export function TransactionList({ transactions, onDelete, onEdit }: TransactionL
                             <Label htmlFor="edit-date" className="text-right">
                                 Data
                             </Label>
-                            <Input
-                                id="edit-date"
-                                type="date"
-                                value={editForm.date}
-                                onChange={(e) => handleEditFormChange("date", e.target.value)}
-                                className="col-span-3"
-                            />
+                            <div className="col-span-3 space-y-1">
+                                <Input
+                                    id="edit-date"
+                                    type="date"
+                                    value={editForm.date}
+                                    onChange={(e) => handleEditFormChange("date", e.target.value)}
+                                    max={maxDate}
+                                />
+                                <p className="text-xs text-muted-foreground">Você pode selecionar datas passadas, hoje ou amanhã.</p>
+                            </div>
                         </div>
                     </div>
                     <DialogFooter>
