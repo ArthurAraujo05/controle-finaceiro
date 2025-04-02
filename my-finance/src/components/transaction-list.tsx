@@ -58,7 +58,6 @@ export function TransactionList({ transactions, onDelete, onEdit }: TransactionL
     })
     const [editError, setEditError] = useState("")
 
-    // Calcular a data máxima permitida (amanhã)
     const getMaxDate = () => {
         const tomorrow = new Date()
         tomorrow.setDate(tomorrow.getDate() + 1)
@@ -82,7 +81,7 @@ export function TransactionList({ transactions, onDelete, onEdit }: TransactionL
             transaction.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
             getCategoryLabel(transaction.category).toLowerCase().includes(searchTerm.toLowerCase())
         const matchesCategory = filterCategory === "all" || transaction.category === filterCategory
-        const matchesType = filterType === "" || transaction.type === filterType
+        const matchesType = filterType === "all" || transaction.type === filterType
 
         return matchesSearch && matchesCategory && matchesType
     })
@@ -166,10 +165,8 @@ export function TransactionList({ transactions, onDelete, onEdit }: TransactionL
     const handleSaveEdit = () => {
         if (!editingItem) return
 
-        // Limpar erro anterior
         setEditError("")
 
-        // Validar campos obrigatórios
         if (!editForm.description.trim()) {
             setEditError("Por favor, informe uma descrição")
             return
@@ -180,20 +177,17 @@ export function TransactionList({ transactions, onDelete, onEdit }: TransactionL
             return
         }
 
-        // Garantir que o valor é um número válido
         const amount = Number.parseFloat(editForm.amount)
         if (isNaN(amount) || amount <= 0) {
             setEditError("Por favor, insira um valor válido maior que zero")
             return
         }
 
-        // Validar a data
         if (!editForm.date) {
             setEditError("Por favor, selecione uma data")
             return
         }
 
-        // Validar que a data não é mais de um dia no futuro
         if (!validateDate(editForm.date)) {
             setEditError("A data não pode ser mais de um dia no futuro")
             return
@@ -207,13 +201,10 @@ export function TransactionList({ transactions, onDelete, onEdit }: TransactionL
             date: editForm.date,
         }
 
-        // Chamar a função onEdit do componente pai
         onEdit(updatedTransaction)
 
-        // Fechar o diálogo
         setDialogOpen(false)
 
-        // Limpar o estado de edição
         setEditingItem(null)
     }
 
