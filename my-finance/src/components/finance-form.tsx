@@ -27,7 +27,6 @@ export function FinanceForm({ onSubmit, editingTransaction, onCancel }: FinanceF
     const [date, setDate] = useState(new Date().toISOString().split("T")[0])
     const [error, setError] = useState("")
 
-    // Calcular a data máxima permitida (amanhã)
     const getMaxDate = () => {
         const tomorrow = new Date()
         tomorrow.setDate(tomorrow.getDate() + 1)
@@ -60,7 +59,6 @@ export function FinanceForm({ onSubmit, editingTransaction, onCancel }: FinanceF
         e.preventDefault()
         setError("")
 
-        // Validação básica
         if (!description.trim()) {
             setError("Por favor, informe uma descrição")
             return
@@ -81,7 +79,6 @@ export function FinanceForm({ onSubmit, editingTransaction, onCancel }: FinanceF
             return
         }
 
-        // Validação da data
         if (!validateDate(date)) {
             setError("A data não pode ser mais de um dia no futuro")
             return
@@ -211,5 +208,3 @@ export function FinanceForm({ onSubmit, editingTransaction, onCancel }: FinanceF
         </Card>
     )
 }
-
-// Compare this snippet from my-finance/src/components/finance-form.tsx:
